@@ -144,8 +144,13 @@ class ImpressaoTab(QWidget):
         self.btn_preview.clicked.connect(self.atualizar_preview)
         self.btn_preview.setEnabled(False)
         
+        # Botão de debug (temporário)
+        self.btn_debug = ModernButton("🐛 Debug Impressora", "warning")
+        self.btn_debug.clicked.connect(self.debug_impressora)
+        
         btn_layout.addWidget(self.btn_imprimir)
         btn_layout.addWidget(self.btn_preview)
+        btn_layout.addWidget(self.btn_debug)
         
         layout.addLayout(btn_layout)
     
@@ -172,6 +177,31 @@ class ImpressaoTab(QWidget):
         self.caldeira_input.textChanged.connect(self.gerar_codigo_sopa)
         self.turno_combo.currentTextChanged.connect(self.gerar_codigo_sopa)
         self.lote_input.textChanged.connect(self.gerar_codigo_sopa)
+    
+    def debug_impressora(self):
+        """Função de debug para testar a configuração da impressora"""
+        try:
+            impressora_nome = self.settings_manager.get_printer_name()
+            
+            debug_info = f"""
+🐛 DEBUG - Informações da Impressora:
+
+📋 Impressora Configurada: '{impressora_nome}'
+📝 Tipo: {type(impressora_nome)}
+📏 Tamanho: {len(impressora_nome) if impressora_nome else 'N/A'}
+
+🖨️ Impressoras Disponíveis:
+{chr(10).join(f"  - {imp}" for imp in self.printer_manager.impressoras_disponiveis)}
+
+⚙️ Settings Manager:
+  - Arquivo config: {hasattr(self.settings_manager, 'config_file')}
+  - Config atual: {self.settings_manager.current_config}
+"""
+            
+            QMessageBox.information(self, "Debug - Configuração da Impressora", debug_info)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Erro no Debug", f"Erro ao obter informações: {str(e)}")
     
     def on_codigo_changed(self):
         """Quando o código muda, limpa a interface"""
@@ -306,6 +336,10 @@ class ImpressaoTab(QWidget):
             return
         
         try:
+            # Debug adicional antes da impressão
+            print("🖨️ === INÍCIO DA IMPRESSÃO ===")
+            print(f"📋 Material: {self.material_info}")
+            
             # Validar dados antes de imprimir
             if self.material_info['tipo'] == 'sopa':
                 if not self.caldeira_input.text().strip() or not self.lote_input.text().strip():
@@ -330,8 +364,11 @@ class ImpressaoTab(QWidget):
                     'tipo': 'normal'
                 }
             
+            print(f"📤 Dados de impressão: {dados_impressao}")
+            
             # Gerar ZPL
             zpl_code = self.zpl_generator.gerar_zpl(dados_impressao)
+            print(f"📄 ZPL gerado com sucesso ({len(zpl_code)} caracteres)")
             
             # Imprimir
             if self.printer_manager.imprimir(zpl_code):
@@ -341,6 +378,7 @@ class ImpressaoTab(QWidget):
                 QMessageBox.warning(self, "Erro", "Falha ao enviar para impressora!")
                 
         except Exception as e:
+            print(f"❌ ERRO NA IMPRESSÃO: {str(e)}")
             QMessageBox.critical(self, "Erro", f"Erro ao imprimir: {str(e)}")
     
     def limpar_campos_apos_impressao(self):

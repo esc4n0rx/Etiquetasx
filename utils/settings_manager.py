@@ -41,7 +41,12 @@ class SettingsManager:
                 else:
                     config[key] = self.settings.value(key, default_value, type=str)
             
+            # Garantir que impressora não seja None
+            if config['impressora'] is None:
+                config['impressora'] = ''
+            
             print(f"✅ Configurações carregadas: {config}")
+            print(f"🖨️ Impressora carregada: '{config['impressora']}'")
             return config
             
         except Exception as e:
@@ -54,9 +59,14 @@ class SettingsManager:
             if config:
                 self.current_config.update(config)
             
+            # Garantir que impressora não seja None
+            if self.current_config.get('impressora') is None:
+                self.current_config['impressora'] = ''
+            
             # Salvar no QSettings
             for key, value in self.current_config.items():
                 self.settings.setValue(key, value)
+                print(f"🔧 Salvando {key}: {value}")
             
             # Forçar sincronização
             self.settings.sync()
@@ -65,6 +75,7 @@ class SettingsManager:
             self.save_to_json()
             
             print(f"✅ Configurações salvas: {self.current_config}")
+            print(f"🖨️ Impressora salva: '{self.current_config.get('impressora')}'")
             return True
             
         except Exception as e:
@@ -76,6 +87,7 @@ class SettingsManager:
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.current_config, f, indent=4, ensure_ascii=False)
+            print(f"📄 JSON salvo: {self.config_file}")
         except Exception as e:
             print(f"⚠️ Erro ao salvar JSON: {e}")
     
@@ -99,12 +111,38 @@ class SettingsManager:
     
     def get_printer_name(self):
         """Retorna nome da impressora"""
-        return self.current_config.get('impressora', '')
+        impressora = self.current_config.get('impressora', '')
+        print(f"🔍 Recuperando impressora: '{impressora}' (tipo: {type(impressora)})")
+        
+        # Garantir que não seja None
+        if impressora is None:
+            impressora = ''
+            print("⚠️ Impressora era None, convertido para string vazia")
+        
+        return impressora
     
     def save_printer_name(self, impressora):
         """Salva nome da impressora"""
+        print(f"💾 Salvando impressora: '{impressora}' (tipo: {type(impressora)})")
+        
+        # Garantir que seja string
+        if impressora is None:
+            impressora = ''
+        
+        # Atualizar configuração atual
         self.current_config['impressora'] = impressora
-        self.save_settings()
+        
+        # Salvar imediatamente no QSettings
+        self.settings.setValue('impressora', impressora)
+        self.settings.sync()
+        
+        # Salvar todas as configurações
+        success = self.save_settings()
+        
+        print(f"📋 Resultado do salvamento: {success}")
+        print(f"📊 Config atual após salvamento: {self.current_config}")
+        
+        return success
     
     def get_default_config(self):
         """Retorna configuração padrão"""
@@ -122,3 +160,29 @@ class SettingsManager:
             'largura': self.current_config.get('largura_etiqueta', 472),
             'altura': self.current_config.get('altura_etiqueta', 1181)
         }
+    
+    def debug_config(self):
+        """Método de debug para verificar configurações"""
+        print("🐛 === DEBUG SETTINGS MANAGER ===")
+        print(f"📁 Arquivo config: {self.config_file}")
+        print(f"⚙️ QSettings organização: {self.settings.organizationName()}")
+        print(f"📱 QSettings aplicação: {self.settings.applicationName()}")
+        print(f"📊 Config atual: {self.current_config}")
+        print(f"🖨️ Impressora atual: '{self.get_printer_name()}'")
+        
+        # Verificar QSettings diretamente
+        qsettings_impressora = self.settings.value('impressora', '')
+        print(f"🔧 QSettings direto: '{qsettings_impressora}'")
+        
+        # Verificar arquivo JSON
+        if os.path.exists(self.config_file):
+            try:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    json_config = json.load(f)
+                print(f"📄 JSON file: {json_config}")
+            except Exception as e:
+                print(f"❌ Erro ao ler JSON: {e}")
+        else:
+            print("📄 Arquivo JSON não existe")
+        
+        print("🐛 === FIM DEBUG ===")

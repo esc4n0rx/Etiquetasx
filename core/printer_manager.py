@@ -42,27 +42,58 @@ class PrinterManager:
         except:
             impressoras = ["Nenhuma impressora encontrada"]
         
+        print(f"🖨️ Impressoras encontradas: {impressoras}")
         return impressoras
     
     def imprimir(self, zpl_code):
         """Imprime código ZPL"""
+        # Forçar recarregamento da configuração
         impressora_nome = self.settings_manager.get_printer_name()
         
+        # Debug detalhado
+        print(f"🐛 === DEBUG IMPRESSÃO ===")
+        print(f"📋 Impressora recuperada: '{impressora_nome}'")
+        print(f"📏 Tamanho da string: {len(impressora_nome) if impressora_nome else 'N/A'}")
+        print(f"🔍 É string vazia: {impressora_nome == ''}")
+        print(f"🔍 É None: {impressora_nome is None}")
+        print(f"📊 Tipo: {type(impressora_nome)}")
+        
+        # Validação detalhada
         if not impressora_nome:
-            raise Exception("Nenhuma impressora configurada!")
+            raise Exception("❌ Nenhuma impressora configurada! Configure uma impressora na aba 'Configurações'.")
+        
+        if impressora_nome.strip() == "":
+            raise Exception("❌ Nome da impressora está vazio! Configure uma impressora na aba 'Configurações'.")
+        
+        if impressora_nome == "Nenhuma impressora encontrada":
+            raise Exception("❌ Nenhuma impressora válida encontrada! Verifique as impressoras instaladas.")
+        
+        # Verificar se a impressora está disponível
+        if impressora_nome not in self.impressoras_disponiveis:
+            print(f"⚠️ AVISO - Impressora '{impressora_nome}' não está na lista atual")
+            print(f"📋 Lista atual: {self.impressoras_disponiveis}")
+            print(f"🔄 Tentando imprimir mesmo assim...")
         
         try:
-            return self._enviar_para_impressora(impressora_nome, zpl_code)
+            result = self._enviar_para_impressora(impressora_nome, zpl_code)
+            print(f"✅ Resultado da impressão: {result}")
+            return result
         except Exception as e:
-            raise Exception(f"Erro ao imprimir: {str(e)}")
+            error_msg = f"❌ Erro ao imprimir na impressora '{impressora_nome}': {str(e)}"
+            print(error_msg)
+            raise Exception(error_msg)
     
     def _enviar_para_impressora(self, impressora_nome, zpl_code):
         """Envia ZPL para impressora específica"""
         sucesso = False
         
+        print(f"📤 Enviando para impressora: '{impressora_nome}'")
+        print(f"📄 Tamanho do ZPL: {len(zpl_code)} caracteres")
+        
         # Método 1: win32print (Windows)
         if WIN32_AVAILABLE and platform.system() == "Windows":
             try:
+                print("🖨️ Tentando método win32print...")
                 printer_handle = win32print.OpenPrinter(impressora_nome)
                 try:
                     job_info = ("Etiqueta", None, "RAW")
@@ -72,16 +103,18 @@ class PrinterManager:
                         win32print.WritePrinter(printer_handle, zpl_code.encode('utf-8'))
                         win32print.EndPagePrinter(printer_handle)
                         sucesso = True
+                        print("✅ Impressão enviada via win32print")
                     finally:
                         win32print.EndDocPrinter(printer_handle)
                 finally:
                     win32print.ClosePrinter(printer_handle)
             except Exception as e:
-                print(f"Erro com win32print: {e}")
+                print(f"❌ Erro com win32print: {e}")
         
         # Método 2: Comando do sistema (fallback)
         if not sucesso:
             try:
+                print("🖨️ Tentando método de comando do sistema...")
                 with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as temp_file:
                     temp_file.write(zpl_code)
                     temp_file_path = temp_file.name
@@ -98,14 +131,20 @@ class PrinterManager:
                 
                 os.unlink(temp_file_path)
                 sucesso = True
+                print("✅ Impressão enviada via comando do sistema")
                 
             except Exception as e:
-                print(f"Erro com comando do sistema: {e}")
+                print(f"❌ Erro com comando do sistema: {e}")
+        
+        if not sucesso:
+            raise Exception("Falha em todos os métodos de impressão")
         
         return sucesso
     
     def testar_impressora(self, impressora_nome):
         """Testa impressora com etiqueta de teste"""
+        print(f"🧪 Testando impressora: '{impressora_nome}'")
+        
         zpl_teste = """^XA
 ^MMT
 ^PW472
