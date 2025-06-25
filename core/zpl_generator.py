@@ -182,10 +182,18 @@ class ZPLGenerator:
         
         pos_y += config['espacamento'] * 2
         
-        # Informações de conservação (sanitizadas)
+        # Informações de conservação (com quebra manual melhorada)
         conservacao_sanitizada = self._sanitizar_texto_zpl(dados['conservacao'])
-        linhas_conservacao = conservacao_sanitizada.split('\n')
-        for linha in linhas_conservacao:
+        
+        # Quebrar manualmente o texto de conservação em pontos específicos
+        linhas_conservacao_custom = [
+            "Conservacao: -10 a -18 graus",
+            "ou mais frio.",
+            "Validade apos descongelamento:",
+            "5 dias"
+        ]
+        
+        for linha in linhas_conservacao_custom:
             if linha.strip():
                 zpl += f"^CF0,{config['fonte_texto'] * 2}\n"
                 zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_texto'] * 2},{config['fonte_texto'] * 2}^FH\\^FD{linha.strip()}^FS\n"
