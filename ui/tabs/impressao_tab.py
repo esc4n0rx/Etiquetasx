@@ -261,6 +261,10 @@ class ImpressaoTab(QWidget):
             if len(caldeira) >= 2 and len(lote) >= 3:
                 self.atualizar_preview()
     
+    def get_texto_conservacao_sopa(self):
+        """Retorna texto padronizado de conservação para sopas"""
+        return "Conservacao: -10 a -18 graus\nou mais frio.\nValidade apos descongelamento: 5 dias"
+    
     def atualizar_preview(self):
         """Atualiza o preview da etiqueta"""
         if not hasattr(self, 'material_info'):
@@ -280,7 +284,7 @@ class ImpressaoTab(QWidget):
                     'validade': self.material_info['data_validade'],
                     'tipo': 'sopa',
                     'codigo_sopa': self.codigo_gerado_label.text(),
-                    'conservacao': "Conservacao: -10 A -18\nou mais frio.\nValidade apos descongelamento: 5 dias"
+                    'conservacao': self.get_texto_conservacao_sopa()
                 }
             else:
                 # Dados normais
@@ -315,7 +319,7 @@ class ImpressaoTab(QWidget):
                     'validade': self.material_info['data_validade'],
                     'tipo': 'sopa',
                     'codigo_sopa': self.codigo_gerado_label.text(),
-                    'conservacao': "Conservação: -10° À -18°\nou mais frio.\nValidade após descongelamento: 5 dias"
+                    'conservacao': self.get_texto_conservacao_sopa()
                 }
             else:
                 # Dados para impressão normal

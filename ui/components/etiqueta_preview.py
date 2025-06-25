@@ -24,10 +24,10 @@ class EtiquetaPreview(QWidget):
         self.update()
     
     def atualizar_configuracoes(self, config):
-        """Atualiza configurações de layout"""
-        self.configuracoes.update(config)
-        self.update()
-    
+       """Atualiza configurações de layout"""
+       self.configuracoes.update(config)
+       self.update()
+   
     def limpar(self):
         """Limpa o preview"""
         self.dados = None
@@ -75,58 +75,58 @@ class EtiquetaPreview(QWidget):
         painter.drawText(rect, Qt.AlignCenter, f"⚠️ {self.dados['erro']}")
     
     def _desenhar_etiqueta_normal(self, painter, rect):
-       """Desenha etiqueta normal"""
-       x = rect.x() + self.configuracoes['margem_x']
-       y = rect.y() + self.configuracoes['margem_y']
-       largura = rect.width() - (self.configuracoes['margem_x'] * 2)
-       
-       if self.configuracoes['centralizar']:
-           align = Qt.AlignCenter
-       else:
-           align = Qt.AlignLeft
-       
-       # Código
-       painter.setPen(QColor(44, 62, 80))
-       painter.setFont(QFont("Arial", self.configuracoes['fonte_titulo'], QFont.Bold))
-       codigo_rect = QRect(x, y, largura, 30)
-       painter.drawText(codigo_rect, align, f"Codigo: {self.dados['codigo']}")
-       
-       y += self.configuracoes['espacamento'] + 10
-       
-       # Descrição
-       painter.setFont(QFont("Arial", self.configuracoes['fonte_subtitulo'], QFont.Bold))
-       desc_rect = QRect(x, y, largura, 25)
-       painter.drawText(desc_rect, align, "Descrição:")
-       
-       y += self.configuracoes['espacamento']
-       
-       # Texto da descrição (quebrar se necessário)
-       painter.setFont(QFont("Arial", self.configuracoes['fonte_texto']))
-       descricao_lines = self._quebrar_texto(self.dados['descricao'], largura, painter.fontMetrics())
-       
-       for linha in descricao_lines:
-           linha_rect = QRect(x, y, largura, 20)
-           painter.drawText(linha_rect, align, linha)
-           y += self.configuracoes['espacamento'] - 5
-       
-       y += 10
-       
-       # Validade
-       painter.setPen(QColor(39, 174, 96))
-       painter.setFont(QFont("Arial", self.configuracoes['fonte_subtitulo'], QFont.Bold))
-       val_rect = QRect(x, y, largura, 25)
-       painter.drawText(val_rect, align, f"Validade: {self.dados['validade']}")
-       
-       y += self.configuracoes['espacamento'] + 10
-       
-       # Data de impressão
-       painter.setPen(QColor(127, 140, 141))
-       painter.setFont(QFont("Arial", self.configuracoes['fonte_texto'] - 2))
-       from datetime import datetime
-       data_impressao = datetime.now().strftime('%d/%m/%Y %H:%M')
-       data_rect = QRect(x, y, largura, 20)
-       painter.drawText(data_rect, align, f"Data: {data_impressao}")
-   
+        """Desenha etiqueta normal"""
+        x = rect.x() + self.configuracoes['margem_x']
+        y = rect.y() + self.configuracoes['margem_y']
+        largura = rect.width() - (self.configuracoes['margem_x'] * 2)
+        
+        if self.configuracoes['centralizar']:
+            align = Qt.AlignCenter
+        else:
+            align = Qt.AlignLeft
+        
+        # Código
+        painter.setPen(QColor(44, 62, 80))
+        painter.setFont(QFont("Arial", self.configuracoes['fonte_titulo'], QFont.Bold))
+        codigo_rect = QRect(x, y, largura, 30)
+        painter.drawText(codigo_rect, align, f"Codigo: {self.dados['codigo']}")
+        
+        y += self.configuracoes['espacamento'] + 10
+        
+        # Descrição
+        painter.setFont(QFont("Arial", self.configuracoes['fonte_subtitulo'], QFont.Bold))
+        desc_rect = QRect(x, y, largura, 25)
+        painter.drawText(desc_rect, align, "Descrição:")
+        
+        y += self.configuracoes['espacamento']
+        
+        # Texto da descrição (quebrar se necessário)
+        painter.setFont(QFont("Arial", self.configuracoes['fonte_texto']))
+        descricao_lines = self._quebrar_texto(self.dados['descricao'], largura, painter.fontMetrics())
+        
+        for linha in descricao_lines:
+            linha_rect = QRect(x, y, largura, 20)
+            painter.drawText(linha_rect, align, linha)
+            y += self.configuracoes['espacamento'] - 5
+        
+        y += 10
+        
+        # Validade
+        painter.setPen(QColor(39, 174, 96))
+        painter.setFont(QFont("Arial", self.configuracoes['fonte_subtitulo'], QFont.Bold))
+        val_rect = QRect(x, y, largura, 25)
+        painter.drawText(val_rect, align, f"Validade: {self.dados['validade']}")
+        
+        y += self.configuracoes['espacamento'] + 10
+        
+        # Data de impressão
+        painter.setPen(QColor(127, 140, 141))
+        painter.setFont(QFont("Arial", self.configuracoes['fonte_texto'] - 2))
+        from datetime import datetime
+        data_impressao = datetime.now().strftime('%d/%m/%Y %H:%M')
+        data_rect = QRect(x, y, largura, 20)
+        painter.drawText(data_rect, align, f"Data: {data_impressao}")
+    
     def _desenhar_etiqueta_sopa(self, painter, rect):
         """Desenha etiqueta de sopa"""
         x = rect.x() + self.configuracoes['margem_x']
@@ -180,11 +180,14 @@ class EtiquetaPreview(QWidget):
         
         y += self.configuracoes['espacamento']
         
-        # Informações de conservação
+        # Informações de conservação (texto original com caracteres especiais para visualização)
         painter.setPen(QColor(230, 126, 34))
         painter.setFont(QFont("Arial", self.configuracoes['fonte_texto'] - 1, QFont.Bold))
         
-        conservacao_lines = self.dados.get('conservacao', '').split('\n')
+        # Texto original para preview visual (com acentos)
+        conservacao_display = "Conservação: -10° à -18°\nou mais frio.\nValidade após descongelamento: 5 dias"
+        conservacao_lines = conservacao_display.split('\n')
+        
         for linha in conservacao_lines:
             if linha.strip():
                 cons_rect = QRect(x, y, largura, 16)

@@ -1,4 +1,6 @@
 from datetime import datetime
+import unicodedata
+import re
 
 class ZPLGenerator:
     def __init__(self, settings_manager):
@@ -10,6 +12,66 @@ class ZPLGenerator:
             return self._gerar_zpl_sopa(dados)
         else:
             return self._gerar_zpl_normal(dados)
+    
+    def _sanitizar_texto_zpl(self, texto):
+        """Sanitiza texto para impressoras Zebra ZPL"""
+        if not texto:
+            return ""
+        
+        # Mapeamento de caracteres especiais para equivalentes ASCII
+        substituicoes = {
+            'ç': 'c', 'Ç': 'C',
+            'ã': 'a', 'Ã': 'A',
+            'à': 'a', 'À': 'A',
+            'á': 'a', 'Á': 'A',
+            'â': 'a', 'Â': 'A',
+            'ä': 'a', 'Ä': 'A',
+            'é': 'e', 'É': 'E',
+            'è': 'e', 'È': 'E',
+            'ê': 'e', 'Ê': 'E',
+            'ë': 'e', 'Ë': 'E',
+            'í': 'i', 'Í': 'I',
+            'ì': 'i', 'Ì': 'I',
+            'î': 'i', 'Î': 'I',
+            'ï': 'i', 'Ï': 'I',
+            'ó': 'o', 'Ó': 'O',
+            'ò': 'o', 'Ò': 'O',
+            'ô': 'o', 'Ô': 'O',
+            'õ': 'o', 'Õ': 'O',
+            'ö': 'o', 'Ö': 'O',
+            'ú': 'u', 'Ú': 'U',
+            'ù': 'u', 'Ù': 'U',
+            'û': 'u', 'Û': 'U',
+            'ü': 'u', 'Ü': 'U',
+            'ñ': 'n', 'Ñ': 'N',
+            '°': ' graus',
+            '²': '2',
+            '³': '3',
+            '½': '1/2',
+            '¼': '1/4',
+            '¾': '3/4',
+            '–': '-',
+            '—': '-',
+            ''': "'",
+            ''': "'",
+            '"': '"',
+            '"': '"',
+            '…': '...',
+        }
+        
+        # Aplicar substituições
+        texto_sanitizado = texto
+        for char_especial, char_ascii in substituicoes.items():
+            texto_sanitizado = texto_sanitizado.replace(char_especial, char_ascii)
+        
+        # Remover caracteres não ASCII restantes
+        texto_sanitizado = unicodedata.normalize('NFKD', texto_sanitizado)
+        texto_sanitizado = texto_sanitizado.encode('ascii', 'ignore').decode('ascii')
+        
+        # Remover caracteres problemáticos para ZPL
+        texto_sanitizado = re.sub(r'[^\x20-\x7E]', '', texto_sanitizado)
+        
+        return texto_sanitizado
     
     def _gerar_zpl_normal(self, dados):
         """Gera ZPL para etiquetas normais"""
@@ -29,9 +91,9 @@ class ZPLGenerator:
             pos_x = 236  # Centro da etiqueta
         
         # Código
-        # Código
+        codigo_sanitizado = self._sanitizar_texto_zpl(dados['codigo'])
         zpl += f"^CF0,{config['fonte_titulo'] * 3}\n"
-        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_titulo'] * 3},{config['fonte_titulo'] * 3}^FH\\^FDCodigo: {dados['codigo']}^FS\n"
+        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_titulo'] * 3},{config['fonte_titulo'] * 3}^FH\\^FDCodigo: {codigo_sanitizado}^FS\n"
         
         pos_y += config['espacamento'] * 3
         
@@ -42,7 +104,8 @@ class ZPLGenerator:
         pos_y += config['espacamento'] * 2
         
         # Quebrar descrição em linhas
-        linhas_descricao = self._quebrar_texto(dados['descricao'], 30)
+        descricao_sanitizada = self._sanitizar_texto_zpl(dados['descricao'])
+        linhas_descricao = self._quebrar_texto(descricao_sanitizada, 30)
         for linha in linhas_descricao:
             zpl += f"^CF0,{config['fonte_texto'] * 2}\n"
             zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_texto'] * 2},{config['fonte_texto'] * 2}^FH\\^FD{linha}^FS\n"
@@ -51,8 +114,9 @@ class ZPLGenerator:
         pos_y += config['espacamento']
         
         # Validade
+        validade_sanitizada = self._sanitizar_texto_zpl(dados['validade'])
         zpl += f"^CF0,{config['fonte_subtitulo'] * 2}\n"
-        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_subtitulo'] * 2},{config['fonte_subtitulo'] * 2}^FH\\^FDValidade: {dados['validade']}^FS\n"
+        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_subtitulo'] * 2},{config['fonte_subtitulo'] * 2}^FH\\^FDValidade: {validade_sanitizada}^FS\n"
         
         pos_y += config['espacamento'] * 2
         
@@ -82,8 +146,9 @@ class ZPLGenerator:
             pos_x = 236  # Centro da etiqueta
         
         # Código
+        codigo_sanitizado = self._sanitizar_texto_zpl(dados['codigo'])
         zpl += f"^CF0,{config['fonte_titulo'] * 3}\n"
-        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_titulo'] * 3},{config['fonte_titulo'] * 3}^FH\\^FDCodigo: {dados['codigo']}^FS\n"
+        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_titulo'] * 3},{config['fonte_titulo'] * 3}^FH\\^FDCodigo: {codigo_sanitizado}^FS\n"
         
         pos_y += config['espacamento'] * 3
         
@@ -94,7 +159,8 @@ class ZPLGenerator:
         pos_y += config['espacamento'] * 2
         
         # Quebrar descrição em linhas
-        linhas_descricao = self._quebrar_texto(dados['descricao'], 30)
+        descricao_sanitizada = self._sanitizar_texto_zpl(dados['descricao'])
+        linhas_descricao = self._quebrar_texto(descricao_sanitizada, 30)
         for linha in linhas_descricao:
             zpl += f"^CF0,{config['fonte_texto'] * 2}\n"
             zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_texto'] * 2},{config['fonte_texto'] * 2}^FH\\^FD{linha}^FS\n"
@@ -103,19 +169,22 @@ class ZPLGenerator:
         pos_y += config['espacamento']
         
         # Código da sopa (caldeira+turno+lote)
+        codigo_sopa_sanitizado = self._sanitizar_texto_zpl(dados['codigo_sopa'])
         zpl += f"^CF0,{config['fonte_subtitulo'] * 2}\n"
-        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_subtitulo'] * 2},{config['fonte_subtitulo'] * 2}^FH\\^FDCodigo Sopa: {dados['codigo_sopa']}^FS\n"
+        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_subtitulo'] * 2},{config['fonte_subtitulo'] * 2}^FH\\^FDCodigo Sopa: {codigo_sopa_sanitizado}^FS\n"
         
         pos_y += config['espacamento'] * 2
         
         # Validade
+        validade_sanitizada = self._sanitizar_texto_zpl(dados['validade'])
         zpl += f"^CF0,{config['fonte_subtitulo'] * 2}\n"
-        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_subtitulo'] * 2},{config['fonte_subtitulo'] * 2}^FH\\^FDValidade: {dados['validade']}^FS\n"
+        zpl += f"^FO{pos_x},{pos_y}^A0{align},{config['fonte_subtitulo'] * 2},{config['fonte_subtitulo'] * 2}^FH\\^FDValidade: {validade_sanitizada}^FS\n"
         
         pos_y += config['espacamento'] * 2
         
-        # Informações de conservação
-        linhas_conservacao = dados['conservacao'].split('\n')
+        # Informações de conservação (sanitizadas)
+        conservacao_sanitizada = self._sanitizar_texto_zpl(dados['conservacao'])
+        linhas_conservacao = conservacao_sanitizada.split('\n')
         for linha in linhas_conservacao:
             if linha.strip():
                 zpl += f"^CF0,{config['fonte_texto'] * 2}\n"
